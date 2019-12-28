@@ -1,6 +1,6 @@
 const net = require('net');
 const _ = require('lodash');
-const { contentId, Handshake, Header, Message, Peers } = require('./proto.js');
+const { contentId, Handshake, Header, Message, Peers } = require('waves-proto-js');
 
 // some known peers
 const knownPeers = [
