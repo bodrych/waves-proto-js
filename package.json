@@ -1,0 +1,27 @@
+{
+  "name": "waves-proto-js",
+  "version": "0.1.0",
+  "description": "Waves protocol javascript adapter",
+  "main": "proto.js",
+  "dependencies": {
+    "blake2": "^4.0.0",
+    "express": "^4.17.1",
+    "level": "^6.0.0",
+    "lodash": "^4.17.15",
+    "smart-buffer": "^4.1.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/bodrych/waves-proto-js.git"
+  },
+  "author": "bodrych",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bodrych/waves-proto-js/issues"
+  },
+  "homepage": "https://github.com/bodrych/waves-proto-js#readme"
+}
