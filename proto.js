@@ -43,20 +43,20 @@ class Handshake {
 	}
 
 	static fromBuffer(data) {
-		const smartBuffer = SmartBuffer.fromBuffer(data);
-		const appName = smartBuffer.readString(smartBuffer.readUInt8());
-		const version = _.times(3, () => smartBuffer.readUInt32BE());
-		const nodeName = smartBuffer.readString(smartBuffer.readUInt8());
-		const nonce = smartBuffer.readBigUInt64BE();
-		const declAddrSize = smartBuffer.readUInt32BE();
+		const buf = SmartBuffer.fromBuffer(data);
+		const appName = buf.readString(buf.readUInt8());
+		const version = _.times(3, () => buf.readUInt32BE());
+		const nodeName = buf.readString(buf.readUInt8());
+		const nonce = buf.readBigUInt64BE();
+		const declAddrSize = buf.readUInt32BE();
 		let declAddress;
 		if (declAddrSize === 0) {
 			declAddress = null;
 		} else if (declAddrSize !== 8) {
 			throw new Error('Invalid address length');
 		} else {
-			const ip = _.times(4, () => smartBuffer.readUInt8());
-			const port = smartBuffer.readUInt32BE();
+			const ip = _.times(4, () => buf.readUInt8());
+			const port = buf.readUInt32BE();
 			if (net.isIP(ip.join('.')) === 0) {
 				throw new Error('Invalid address');
 			}
@@ -65,7 +65,7 @@ class Handshake {
 			}
 			declAddress = { ip, port };
 		}
-		const timestamp = smartBuffer.readBigUInt64BE();
+		const timestamp = buf.readBigUInt64BE();
 		return new this({
 			appName,
 			nodeName,
@@ -144,10 +144,10 @@ class Message {
 	}
 
 	toBuffer() {
-		const smartBuf = new SmartBuffer();
-		smartBuf.writeBuffer(this.header.toBuffer());
-		if (this.payload) smartBuf.writeBuffer(this.payload.toBuffer());
-		return smartBuf.toBuffer();
+		const buf = new SmartBuffer();
+		buf.writeBuffer(this.header.toBuffer());
+		if (this.payload) buf.writeBuffer(this.payload.toBuffer());
+		return buf.toBuffer();
 	}
 
 	setChecksum() {
@@ -175,14 +175,14 @@ class Header {
 	}
 
 	static fromBuffer(data) {
-		const smartBuffer = SmartBuffer.fromBuffer(data);
-		const packetLength = smartBuffer.readUInt32BE();
-		const magicBytes = smartBuffer.readBuffer(4);
-		const contentId = smartBuffer.readUInt8();
-		const payloadLength = smartBuffer.readUInt32BE();
+		const buf = SmartBuffer.fromBuffer(data);
+		const packetLength = buf.readUInt32BE();
+		const magicBytes = buf.readBuffer(4);
+		const contentId = buf.readUInt8();
+		const payloadLength = buf.readUInt32BE();
 		let payloadChecksum = null;
 		if (payloadLength > 0) {
-			payloadChecksum = smartBuffer.readBuffer(4);
+			payloadChecksum = buf.readBuffer(4);
 		}
 		return new this({
 			contentId,
@@ -213,24 +213,24 @@ class Peers {
 	}
 
 	static fromBuffer(data) {
-		const smartBuf = SmartBuffer.fromBuffer(data);
-		const peersCount = smartBuf.readUInt32BE();
+		const buf = SmartBuffer.fromBuffer(data);
+		const peersCount = buf.readUInt32BE();
 		const peers = _.times(peersCount, value => {
-			const ip = _.times(4, value => smartBuf.readUInt8());
-			const port = smartBuf.readUInt32BE();
+			const ip = _.times(4, value => buf.readUInt8());
+			const port = buf.readUInt32BE();
 			return { ip, port };
 		});
 		return new this({ peers });
 	}
 
 	toBuffer() {
-		const smartBuf = new SmartBuffer();
-		smartBuf.writeUInt32BE(this.peers.length);
+		const buf = new SmartBuffer();
+		buf.writeUInt32BE(this.peers.length);
 		_.each(this.peers, value => {
-			smartBuf.writeBuffer(Buffer.from(value.ip));
-			smartBuf.writeUInt32BE(value.port);
+			buf.writeBuffer(Buffer.from(value.ip));
+			buf.writeUInt32BE(value.port);
 		});
-		return smartBuf.toBuffer();
+		return buf.toBuffer();
 	}
 }
 
