@@ -50,12 +50,13 @@ class Handshake {
 		const nonce = buf.readBigUInt64BE();
 		const declAddrSize = buf.readUInt32BE();
 		let declAddress;
+		// 0 for no declared address, 8 for ipv4 address + port, 20 for ipv6 address + port
 		if (declAddrSize === 0) {
 			declAddress = null;
-		} else if (declAddrSize !== 8) {
-			throw new Error('Invalid address length');
+		} else if (declAddrSize !== 0 && declAddrSize !== 8 && declAddrSize !== 20) {
+			throw new Error(`An invalid declared address length: ${declAddrSize}`);
 		} else {
-			const ip = _.times(4, () => buf.readUInt8());
+			const ip = _.times(declAddrSize, () => buf.readUInt8());
 			const port = buf.readUInt32BE();
 			if (net.isIP(ip.join('.')) === 0) {
 				throw new Error('Invalid address');
