@@ -1,3 +1,3 @@
 ```
-npm i git+ssh://git@github.com/bodrych/waves-proto-js.git
+pnpm add git+https://github.com/bodrych/waves-proto-js.git
 ```
