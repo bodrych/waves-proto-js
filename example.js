@@ -1,26 +1,20 @@
-const net = require('net');
-const _ = require('lodash');
-const { contentId, Handshake, Header, Message, Peers } = require('waves-proto-js');
+import net from 'net';
+import { contentId, Handshake, Header, Message, Peers } from './proto.js';
 
 // some known peers
 const knownPeers = [
-	{ host: '13.228.86.201', port: 6868 },
-	{ host: '13.229.0.149', port: 6868 },
-	{ host: '18.195.170.147', port: 6868 },
-	{ host: '34.253.153.4', port: 6868 },
-	{ host: '35.156.19.4', port: 6868 },
-	{ host: '52.50.69.247', port: 6868 },
-	{ host: '52.52.46.76', port: 6868 },
-	{ host: '52.57.147.71', port: 6868 },
-	{ host: '52.214.55.18', port: 6868 },
-	{ host: '54.176.190.226', port: 6868 },
-	{ host: '45.77.139.254', port: 6868 },
+	{ host: '52.51.9.86', port: 6868 },
+	{ host: '5.75.231.53', port: 6868 },
+	{ host: '168.119.155.201', port: 6868 },
 ];
 
 // try to connect to random known peer
-const client = net.createConnection(_.sample(knownPeers));
+const random = Math.floor(Math.random() * knownPeers.length);
+const peer = knownPeers[random];
+const client = net.createConnection(peer);
 
 client.on('ready', () => {
+	console.log('ready');
 	// say hello
 	const handshake = new Handshake();
 	client.write(handshake.toBuffer());
@@ -34,10 +28,19 @@ client.once('data', data => {
 	console.log(data);
 	console.log(Handshake.fromBuffer(data))
 
+	let buffer = Buffer.from([]);
+	let targetLength = 0;
+
 	client.on('data', data => {
-		console.log(data);
+		if (buffer.length === 0) targetLength = data.readUInt32BE() + 4
+		buffer = Buffer.concat([buffer, data])
+		if (buffer.length < targetLength) return
 		// try to unmarshal message
-		const message = Message.fromBuffer(data);
+		const targetBuffer = buffer.subarray(0, targetLength)
+		buffer = buffer.subarray(targetLength)
+		if (buffer.length >= 4) targetLength = buffer.readInt32BE() + 4
+		const message = Message.fromBuffer(targetBuffer)
+		console.log(targetBuffer);
 		switch (message.header.contentId) {
 			// node asks for known peers
 			case contentId.getPeers:
@@ -47,10 +50,6 @@ client.once('data', data => {
 					payload: new Peers(),
 				});
 				client.write(peers.toBuffer());
-				break;
-			// node sends known peers
-			case contentId.peers:
-				console.log(message);
 				break;
 		}
 	});

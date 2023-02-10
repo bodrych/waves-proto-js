@@ -1,7 +1,6 @@
-const net = require('net');
-const _ = require('lodash');
-const blake2 = require('blake2');
-const SmartBuffer = require('smart-buffer').SmartBuffer;
+import net from 'net';
+import blake2 from 'blake2';
+import { SmartBuffer } from 'smart-buffer';
 
 const maxHeaderLength = 17;
 const headerMagic = Buffer.from('12345678', 'hex');
@@ -9,7 +8,7 @@ const headerMagic = Buffer.from('12345678', 'hex');
 const headerSizeWithPayload = 17;
 const headerSizeWithoutPayload = 13;
 
-const contentId = {
+export const contentId = {
 	getPeers: 0x1,
 	peers: 0x2,
 	signatures: 0x15,
@@ -25,11 +24,11 @@ const contentId = {
 
 const headerContentIdPosition = 8;
 
-class Handshake {
+export class Handshake {
 	constructor({
 		appName = 'wavesW',
 		nodeName = 'observer',
-		version = [1, 1, 6],
+		version = [1, 4, 0],
 		nonce = 0n,
 		declAddress = null,
 		timestamp = BigInt((new Date()).getTime()),
@@ -45,7 +44,7 @@ class Handshake {
 	static fromBuffer(data) {
 		const buf = SmartBuffer.fromBuffer(data);
 		const appName = buf.readString(buf.readUInt8());
-		const version = _.times(3, () => buf.readUInt32BE());
+		const version = Array.from({ length: 3 }, () => buf.readUInt32BE());
 		const nodeName = buf.readString(buf.readUInt8());
 		const nonce = buf.readBigUInt64BE();
 		const declAddrSize = buf.readUInt32BE();
@@ -56,7 +55,7 @@ class Handshake {
 		} else if (declAddrSize !== 0 && declAddrSize !== 8 && declAddrSize !== 20) {
 			throw new Error(`An invalid declared address length: ${declAddrSize}`);
 		} else {
-			const ip = _.times(declAddrSize, () => buf.readUInt8());
+			const ip = Array.from({ length: declAddrSize - 4 }, () => buf.readUInt8());
 			const port = buf.readUInt32BE();
 			if (net.isIP(ip.join('.')) === 0) {
 				throw new Error('Invalid address');
@@ -81,7 +80,9 @@ class Handshake {
 		const buf = new SmartBuffer();
 		buf.writeUInt8(Buffer.from(this.appName).length);
 		buf.writeString(this.appName);
-		_.each(this.version, value => buf.writeUInt32BE(value))
+		for (const value of this.version) {
+			buf.writeUInt32BE(value);
+		}
 		buf.writeUInt8(Buffer.from(this.nodeName).length);
 		buf.writeString(this.nodeName);
 		buf.writeBigUInt64BE(this.nonce);
@@ -89,7 +90,9 @@ class Handshake {
 			buf.writeUInt32BE(0);
 		} else {
 			buf.writeUInt32BE(8);
-			_.each(this.declAddress.ip, value => buf.writeUInt8(value));
+			for (const value of this.declAddress.ip) {
+				buf.writeUInt8(value);
+			}
 			buf.writeUInt32BE(this.declAddress.port);
 		}
 		buf.writeBigUInt64BE(this.timestamp);
@@ -97,7 +100,7 @@ class Handshake {
 	}
 }
 
-class Message {
+export class Message {
 	constructor({
 		contentId,
 		header,
@@ -107,15 +110,16 @@ class Message {
 		if (!contentId) {
 			this.header = header;
 		} else {
+			const payloadLength = payload ? payload.toBuffer().length : 0
 			this.header = new Header({
 				contentId,
 				packetLength: payload ? headerSizeWithPayload + payload.toBuffer().length - 4 : headerSizeWithoutPayload - 4,
-				payloadLength: payload ? payload.toBuffer().length : 0,
+				payloadLength,
 			});
-			if (payload) {
-				const h = blake2.createHash('blake2b');
+			if (payload && payloadLength > 0) {
+				const h = blake2.createHash('blake2b', { digestLength: 32 });
 				h.update(this.payload.toBuffer());
-				this.header.payloadChecksum = h.digest().slice(0, 4);
+				this.header.payloadChecksum = h.digest().subarray(0, 4);
 			}
 		}
 	}
@@ -150,17 +154,9 @@ class Message {
 		if (this.payload) buf.writeBuffer(this.payload.toBuffer());
 		return buf.toBuffer();
 	}
-
-	setChecksum() {
-		if (payload) {
-			const h = blake2.createHash('blake2b');
-			h.update(this.payload.toBuffer());
-			this.header.payloadChecksum = h.digest();
-		}
-	}
 }
 
-class Header {
+export class Header {
 	constructor({
 		contentId,
 		packetLength,
@@ -208,7 +204,7 @@ class Header {
 }
 
 
-class Peers {
+export class Peers {
 	constructor({ peers = [] } = {}) {
 		this.peers = peers;
 	}
@@ -216,8 +212,8 @@ class Peers {
 	static fromBuffer(data) {
 		const buf = SmartBuffer.fromBuffer(data);
 		const peersCount = buf.readUInt32BE();
-		const peers = _.times(peersCount, value => {
-			const ip = _.times(4, value => buf.readUInt8());
+		const peers = Array.from({ length: peersCount }, () => {
+			const ip = Array.from({ length: 4 }, () => buf.readUInt8());
 			const port = buf.readUInt32BE();
 			return { ip, port };
 		});
@@ -227,18 +223,10 @@ class Peers {
 	toBuffer() {
 		const buf = new SmartBuffer();
 		buf.writeUInt32BE(this.peers.length);
-		_.each(this.peers, value => {
-			buf.writeBuffer(Buffer.from(value.ip));
-			buf.writeUInt32BE(value.port);
-		});
+		for (const { ip, port } of this.peers) {
+			buf.writeBuffer(Buffer.from(ip));
+			buf.writeUInt32BE(port);
+		}
 		return buf.toBuffer();
 	}
-}
-
-module.exports = exports = {
-	contentId,
-	Handshake,
-	Header,
-	Message,
-	Peers,
 }
