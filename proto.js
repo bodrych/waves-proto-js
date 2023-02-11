@@ -11,15 +11,21 @@ const headerSizeWithoutPayload = 13;
 export const contentId = {
 	getPeers: 0x1,
 	peers: 0x2,
+	getSignatures: 0x14,
 	signatures: 0x15,
 	getBlock: 0x16,
 	block: 0x17,
 	score: 0x18,
 	transaction: 0x19,
 	invMicroblock: 0x1A,
+	microblockRequest: 0x1b,
+	microblock: 0x1c,
+	pbBlock: 0x1d,
+	pbMicroBlock: 0x1e,
+	pbTransaction: 0x1f,
+	getBlockIds: 0x20,
+	blockIds: 0x21,
 	checkpoint: 0x64,
-	microblockRequest: 27,
-	microblock: 28,
 };
 
 const headerContentIdPosition = 8;
