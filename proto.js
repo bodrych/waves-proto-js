@@ -3,7 +3,7 @@ import blake2 from 'blake2';
 import { SmartBuffer } from 'smart-buffer';
 
 const maxHeaderLength = 17;
-const headerMagic = Buffer.from('12345678', 'hex');
+const headerMagic = 0x12345678;
 
 const headerSizeWithPayload = 17;
 const headerSizeWithoutPayload = 13;
@@ -180,7 +180,7 @@ export class Header {
 	static fromBuffer(data) {
 		const buf = SmartBuffer.fromBuffer(data);
 		const packetLength = buf.readUInt32BE();
-		const magicBytes = buf.readBuffer(4);
+		const magicBytes = buf.readUInt32BE();
 		const contentId = buf.readUInt8();
 		const payloadLength = buf.readUInt32BE();
 		let payloadChecksum = null;
@@ -199,7 +199,7 @@ export class Header {
 	toBuffer() {
 		const buf = new SmartBuffer();
 		buf.writeUInt32BE(this.packetLength);
-		buf.writeBuffer(this.magicBytes);
+		buf.writeUInt32BE(this.magicBytes);
 		buf.writeUInt8(this.contentId);
 		buf.writeUInt32BE(this.payloadLength);
 		if (this.payloadChecksum) {

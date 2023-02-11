@@ -40,7 +40,7 @@ client.once('data', data => {
 		buffer = buffer.subarray(targetLength)
 		if (buffer.length >= 4) targetLength = buffer.readInt32BE() + 4
 		const message = Message.fromBuffer(targetBuffer)
-		console.log(targetBuffer);
+		console.log(message);
 		switch (message.header.contentId) {
 			// node asks for known peers
 			case contentId.getPeers:
